@@ -25,4 +25,4 @@ jobs:
         run: npx eslint . --ext .js,.jsx || true
 
       - name: Expo check (optional)
-    run: npx expo-doctor || true
+        run: npx expo-doctor || true
