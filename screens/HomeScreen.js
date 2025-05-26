@@ -1,93 +1,227 @@
+// screens/HomeScreen.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, FONTS, SIZES } from '../consts/theme';
+import AppHeader from '../components/AppHeader';
+import Card from '../components/Card';
+import { userProfile, proctorAnnouncements, clubsAndAcademics } from '../data/appSampleData';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const HomeScreen = ({ navigation }) => {
+
+  const renderClubItem = ({ item }) => (
+    <TouchableOpacity style={styles.clubItem} onPress={() => item.link ? Linking.openURL(item.link) : navigation.navigate(item.screen)}>
+        {item.iconType === 'image' ? (
+            <Image source={item.image} style={styles.clubIconImage} />
+        ) : (
+            <MaterialCommunityIcons name={item.icon} size={28} color={item.color || COLORS.accent} />
+        )}
+      <Text style={styles.clubName}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderAcademicItem = ({ item }) => (
+     <Card style={styles.academicItemCard} onPress={() => navigation.navigate(item.screen || 'HomeTab')}>
+        <MaterialCommunityIcons name={item.icon} size={24} color={COLORS.accent} style={{marginRight: SIZES.paddingS}}/>
+        <Text style={styles.academicItemText}>{item.name}</Text>
+     </Card>
+  );
+
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>UniCampus</Text>
-        <Text style={styles.subtitle}>Your Digital Campus Companion</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <AppHeader />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <Card style={styles.profileCard}>
+          <View style={styles.profileInfo}>
+            <Text style={styles.greeting}>Hi, {userProfile.name.split(' ')[0]} <Text style={styles.handWave}>🤘</Text></Text>
+            <Text style={styles.userName}>{userProfile.name}</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Class</Text>
+              <Text style={styles.detailValue}>{userProfile.class}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Course</Text>
+              <Text style={styles.detailValue}>{userProfile.course}</Text>
+            </View>
+          </View>
+          <Image source={userProfile.avatar} style={styles.avatar} />
+        </Card>
 
-        <TouchableOpacity
-          style={styles.buttonPrimary}
-          onPress={() => navigation.navigate('StudentLoginScreen')}
-        >
-          <Text style={styles.buttonPrimaryText}>Student Login</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderContainer}>
+             <Text style={styles.sectionTitle}>Proctor Announcements</Text>
+             {/* <MaterialCommunityIcons name="tune-variant" size={22} color={COLORS.textSecondary} /> */}
+          </View>
+          <View style={styles.divider} />
+          {proctorAnnouncements.length === 0 ? (
+            <Text style={styles.noMessages}>No messages from proctor</Text>
+          ) : (
+            <FlatList
+              data={proctorAnnouncements}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.announcementItem}>
+                  <Text style={styles.announcementText}>{item.message}</Text>
+                  <Text style={styles.announcementDate}>{item.date}</Text>
+                </View>
+              )}
+            />
+          )}
+           <View style={[styles.divider, {marginTop: SIZES.paddingS}]} />
+        </View>
 
-        <TouchableOpacity
-          style={styles.buttonSecondary}
-          onPress={() => navigation.navigate('AdminLoginScreen')}
-        >
-          <Text style={styles.buttonSecondaryText}>Admin Login</Text>
-        </TouchableOpacity>
+        <View style={styles.section}>
+             <Text style={[styles.sectionTitle, {textAlign: 'center', marginVertical: SIZES.paddingS}]}>
+                Your Fees Paid
+             </Text>
+        </View>
 
-        <Text style={styles.footer}>© 2025 UniCampus</Text>
-      </View>
-    </View>
+        {/* Clubs Section from one of the screenshots - assuming it's on home too */}
+        <View style={styles.section}>
+            <Text style={[styles.sectionTitle, {marginBottom: SIZES.paddingS}]}>Clubs</Text>
+            {clubsAndAcademics.clubs.map(item => (
+                 <Card key={item.id} style={styles.clubCardItem} onPress={() => item.link ? Linking.openURL(item.link) : alert('Navigate to ' + item.name)}>
+                    {item.iconType === 'image' ? (
+                        <Image source={item.image} style={styles.clubCardIconImage} />
+                    ) : (
+                        <MaterialCommunityIcons name={item.icon} size={28} color={item.color || COLORS.accent} style={styles.clubCardIcon} />
+                    )}
+                    <Text style={styles.clubCardName}>{item.name}</Text>
+                 </Card>
+            ))}
+        </View>
+
+         <View style={styles.section}>
+            <Text style={[styles.sectionTitle, {marginBottom: SIZES.paddingS}]}>Academics</Text>
+             {clubsAndAcademics.academics.map(item => (
+                 <Card key={item.id} style={styles.clubCardItem} onPress={() => alert('Navigate to ' + item.name)}>
+                    <MaterialCommunityIcons name={item.icon} size={28} color={COLORS.accent} style={styles.clubCardIcon} />
+                    <Text style={styles.clubCardName}>{item.name}</Text>
+                 </Card>
+            ))}
+        </View>
+
+
+        <View style={{ height: SIZES.padding * 2 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.primary,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#43e97b', // or any other solid color you prefer
-    justifyContent: 'center',
   },
-  card: {
-    margin: 20,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 25,
+  profileCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    backgroundColor: COLORS.secondary, // Matches card background
+    margin: SIZES.padding,
+    padding: SIZES.padding,
+    borderRadius: SIZES.radius,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  profileInfo: {
+    flex: 1,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 30,
+  greeting: {
+    ...FONTS.h1,
+    color: COLORS.textPrimary,
+    fontSize: 26, // Slightly smaller H1
+    marginBottom: SIZES.paddingXS / 2,
   },
-  buttonPrimary: {
-    backgroundColor: '#2563eb',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginBottom: 15,
-    width: '100%',
-    alignItems: 'center',
+  handWave: {
+    fontSize: 26,
   },
-  buttonPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
+  userName: {
+    ...FONTS.h3,
+    color: COLORS.textPrimary,
+    marginBottom: SIZES.padding,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    marginBottom: SIZES.paddingXS / 2,
+  },
+  detailLabel: {
+    ...FONTS.body2,
+    color: COLORS.textSecondary,
+    width: 70, // Fixed width for alignment
+  },
+  detailValue: {
+    ...FONTS.body2,
+    color: COLORS.textPrimary,
     fontWeight: '600',
   },
-  buttonSecondary: {
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginBottom: 20,
-    width: '100%',
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: COLORS.accent,
+  },
+  section: {
+    marginHorizontal: SIZES.padding,
+    marginTop: SIZES.padding,
+  },
+  sectionHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: SIZES.paddingS,
   },
-  buttonSecondaryText: {
-    color: '#111',
-    fontSize: 16,
-    fontWeight: '500',
+  sectionTitle: {
+    ...FONTS.h2,
+    color: COLORS.textPrimary,
+    fontSize: SIZES.h3, // Slightly smaller than screen title
   },
-  footer: {
-    marginTop: 10,
-    fontSize: 12,
-    color: '#666',
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.divider,
+    marginVertical: SIZES.paddingXS,
+  },
+  noMessages: {
+    ...FONTS.body2,
+    color: COLORS.textTertiary,
+    textAlign: 'center',
+    paddingVertical: SIZES.padding,
+  },
+  announcementItem: {
+    paddingVertical: SIZES.paddingXS,
+  },
+  announcementText: {
+    ...FONTS.body2,
+    color: COLORS.textPrimary,
+  },
+  announcementDate: {
+    ...FONTS.body4,
+    color: COLORS.textTertiary,
+    marginTop: 4,
+  },
+   clubCardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SIZES.paddingS, // Less padding for list items
+    marginBottom: SIZES.paddingS / 2,
+  },
+  clubCardIcon: {
+    marginRight: SIZES.padding,
+  },
+  clubCardIconImage: {
+    width: 28,
+    height: 28,
+    marginRight: SIZES.padding,
+    borderRadius: 6, // Slight rounding if needed
+  },
+  clubCardName: {
+    ...FONTS.h4,
+    color: COLORS.textPrimary,
+    fontWeight: '600',
   },
 });
 

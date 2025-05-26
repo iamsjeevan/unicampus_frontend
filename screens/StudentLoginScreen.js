@@ -10,8 +10,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import DatePicker from 'react-native-date-picker';
+import { useNavigation } from '@react-navigation/native';
 
 const StudentLoginScreen = () => {
+  const navigation = useNavigation();
+
   const [emailOrUsn, setEmailOrUsn] = useState('');
   const [date, setDate] = useState(new Date());
   const [open, setOpen] = useState(false);
@@ -21,8 +24,8 @@ const StudentLoginScreen = () => {
     if (!selectedDate) {
       Alert.alert('Select your password date');
     } else {
-      Alert.alert('Login Attempted', `Password Date: ${selectedDate}`);
-      // Proceed to next screen or validation
+      // You can also add validation here before navigating
+      navigation.navigate('MainApp');
     }
   };
 
@@ -30,7 +33,6 @@ const StudentLoginScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Student Login</Text>
 
-      {/* Email / USN */}
       <View style={styles.inputContainer}>
         <Icon name="person-outline" size={20} color="#888" style={styles.icon} />
         <TextInput
@@ -41,7 +43,6 @@ const StudentLoginScreen = () => {
         />
       </View>
 
-      {/* Date Password Input */}
       <TouchableOpacity style={styles.inputContainer} onPress={() => setOpen(true)}>
         <Icon name="calendar-outline" size={20} color="#888" style={styles.icon} />
         <Text style={[styles.input, { color: selectedDate ? '#000' : '#999' }]}>
@@ -49,7 +50,6 @@ const StudentLoginScreen = () => {
         </Text>
       </TouchableOpacity>
 
-      {/* Date Picker Modal */}
       <DatePicker
         modal
         open={open}
@@ -58,15 +58,12 @@ const StudentLoginScreen = () => {
         onConfirm={(date) => {
           setOpen(false);
           setDate(date);
-          const formatted = date.toISOString().split('T')[0]; // YYYY-MM-DD
+          const formatted = date.toISOString().split('T')[0];
           setSelectedDate(formatted);
         }}
-        onCancel={() => {
-          setOpen(false);
-        }}
+        onCancel={() => setOpen(false)}
       />
 
-      {/* Login Button */}
       <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
         <Text style={styles.loginText}>Login</Text>
       </TouchableOpacity>
