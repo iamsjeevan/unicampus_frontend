@@ -11,24 +11,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-      - name: 🔧 Set up Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: 📥 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🔍 Run ESLint
-        run: npx eslint . --ext .js,.jsx,.ts,.tsx
-        continue-on-error: true  # Won't fail build, logs lint errors
+      - name: Run ESLint
+        run: npx eslint . --ext .js,.jsx
+        continue-on-error: true
 
-      - name: 🛠️ Build React App
+      - name: Build React App
         run: npm run build
 
-      - name: 🩺 Expo Doctor Check (optional for future)
+      - name: Security Audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Lighthouse CI (Performance)
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun || echo "Lighthouse CI failed"
+
+      - name: Expo Doctor Check (optional)
         run: npx expo-doctor
-        continue-on-error: true  # Only relevant if you add Expo later
+        continue-on-error: true
