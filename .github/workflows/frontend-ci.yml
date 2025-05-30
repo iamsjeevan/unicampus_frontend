@@ -11,18 +11,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: 📦 Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up Node.js
+      - name: 🔧 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: npm install
 
-      - name: Run lint check
-        run: npx eslint . --ext .js,.jsx || true
+      - name: 🔍 Run ESLint
+        run: npx eslint . --ext .js,.jsx,.ts,.tsx
+        continue-on-error: true  # Won't fail build, logs lint errors
 
-      - name: Expo check (optional)
-        run: npx expo-doctor || true
+      - name: 🛠️ Build React App
+        run: npm run build
+
+      - name: 🩺 Expo Doctor Check (optional for future)
+        run: npx expo-doctor
+        continue-on-error: true  # Only relevant if you add Expo later
