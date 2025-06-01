@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { ScrollView } from 'react-native';
 import { useNavigate } from 'react-router-dom';
 import { getTrendingPosts } from '@/data/communitySampleData';
 import PostListItem from './PostListItem';

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus } from 'lucide-react';
@@ -7,11 +7,13 @@ import BottomNavigation from '@/components/layout/BottomNavigation';
 import TrendingPostsTab from './TrendingPostsTab';
 import FollowingFeedTab from './FollowingFeedTab';
 import BrowseCommunitiesTab from './BrowseCommunitiesTab';
+import CreatePostScreen from './CreatePostScreen';
 
 const CommunitiesScreen = () => {
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+
   const handleCreatePost = () => {
-    // TODO: Navigate to create post screen when implemented
-    alert('Create Post feature coming soon!');
+    setIsCreatePostOpen(true);
   };
 
   return (
@@ -68,6 +70,12 @@ const CommunitiesScreen = () => {
       >
         <Plus className="h-6 w-6" />
       </Button>
+
+      {/* Create Post Modal */}
+      <CreatePostScreen 
+        isOpen={isCreatePostOpen} 
+        onClose={() => setIsCreatePostOpen(false)} 
+      />
 
       <BottomNavigation />
     </div>

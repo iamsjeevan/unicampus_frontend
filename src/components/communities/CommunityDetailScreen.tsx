@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import BottomNavigation from '@/components/layout/BottomNavigation';
-import { communities, getPopulatedPosts } from '@/data/communitySampleData';
+import { communities, getPopulatedPosts, userFollowedCommunityIds } from '@/data/communitySampleData';
 import PostListItem from './PostListItem';
+import CreatePostScreen from './CreatePostScreen';
 import { ChevronLeft } from 'lucide-react';
 
 const CommunityDetailScreen = () => {
@@ -16,9 +17,36 @@ const CommunityDetailScreen = () => {
   const community = communities.find(c => c.id === communityId);
   const posts = getPopulatedPosts(communityId || '');
 
+  // State for join/leave functionality
+  const [isJoined, setIsJoined] = useState(
+    userFollowedCommunityIds.includes(communityId || '')
+  );
+  const [memberCount, setMemberCount] = useState(community?.memberCount || 0);
+
+  // State for create post modal
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+
   if (!community) {
     return <div>Community not found</div>;
   }
+
+  const handleCreatePost = () => {
+    setIsCreatePostOpen(true);
+  };
+
+  const handleJoinLeave = () => {
+    if (isJoined) {
+      // Leave community
+      setIsJoined(false);
+      setMemberCount(prev => prev - 1);
+      alert(`You've left ${community.name}!`);
+    } else {
+      // Join community
+      setIsJoined(true);
+      setMemberCount(prev => prev + 1);
+      alert(`You've joined ${community.name}!`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -40,7 +68,7 @@ const CommunityDetailScreen = () => {
           <Button 
             size="sm" 
             className="bg-unicampus-red hover:bg-unicampus-red-dark text-white"
-            onClick={() => navigate(`/communities/${communityId}/create-post`)}
+            onClick={handleCreatePost}
           >
             Create Post
           </Button>
@@ -70,9 +98,23 @@ const CommunityDetailScreen = () => {
                   <p className="text-gray-600 dark:text-gray-400 mt-1">
                     {community.description}
                   </p>
-                  <Badge variant="secondary" className="mt-3">
-                    {community.memberCount.toLocaleString()} members
-                  </Badge>
+                  <div className="flex items-center justify-between mt-3">
+                    <Badge variant="secondary">
+                      {memberCount.toLocaleString()} members
+                    </Badge>
+                    <Button
+                      variant={isJoined ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={handleJoinLeave}
+                      className={
+                        isJoined 
+                          ? "bg-gray-100 dark:bg-gray-700 text-unicampus-red hover:bg-gray-200 dark:hover:bg-gray-600" 
+                          : "border-unicampus-red text-unicampus-red hover:bg-unicampus-red hover:text-white"
+                      }
+                    >
+                      {isJoined ? 'Joined' : 'Join'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -102,6 +144,13 @@ const CommunityDetailScreen = () => {
           )}
         </div>
       </div>
+
+      {/* Create Post Modal */}
+      <CreatePostScreen 
+        isOpen={isCreatePostOpen} 
+        onClose={() => setIsCreatePostOpen(false)}
+        preselectedCommunityId={communityId}
+      />
 
       <BottomNavigation />
     </div>
