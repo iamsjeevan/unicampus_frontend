@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Output file where all content will be concatenated
-OUTPUT_FILE="frontend_attendance_integration.txt"
+OUTPUT_FILE="frontend_community_detail_integration.txt"
 
 # Ensure the script is run from the project root (basic check)
 if [ ! -f "package.json" ] || [ ! -d "src" ]; then
@@ -11,25 +11,31 @@ if [ ! -f "package.json" ] || [ ! -d "src" ]; then
 fi
 
 # List of files to concatenate
-# Primary file needed for this integration:
+# Primary files needed for this integration:
 FILES_TO_COLLECT=(
-  "src/components/attendance/AttendanceScreen.tsx"
+  "src/components/communities/CommunityDetailScreen.tsx"
+  "src/components/communities/PostListItem.tsx"
 )
 
-# Also include AuthContext and apiClient again, as they are fundamental
-# and any recent changes to them would be relevant.
+# Optional but related (we've worked on this, useful for context on post creation flow)
+OPTIONAL_FILES=(
+  "src/components/communities/CreatePostScreen.tsx"
+)
+
+# Always include AuthContext, apiClient, and App.tsx (for routing context)
 ALWAYS_INCLUDE=(
   "src/contexts/AuthContext.tsx"
   "src/lib/apiClient.ts"
+  "src/App.tsx"
 )
 
 
 # Clear the output file or create it with a header
-echo "Frontend files for Attendance API integration - Collected on $(date)" > "$OUTPUT_FILE"
-echo "======================================================================" >> "$OUTPUT_FILE"
+echo "Frontend files for Community Detail & PostItem API integration - Collected on $(date)" > "$OUTPUT_FILE"
+echo "==================================================================================" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-echo "Processing primary file for Attendance integration..."
+echo "Processing primary files for Community Detail & PostItem integration..."
 for FILE_PATH in "${FILES_TO_COLLECT[@]}"; do
   if [ -f "$FILE_PATH" ]; then
     echo "--- START OF FILE: $FILE_PATH ---" >> "$OUTPUT_FILE"
@@ -41,13 +47,30 @@ for FILE_PATH in "${FILES_TO_COLLECT[@]}"; do
     echo "" >> "$OUTPUT_FILE"
     echo "Added: $FILE_PATH"
   else
-    echo "!!! WARNING: File not found, skipping: $FILE_PATH !!!" >> "$OUTPUT_FILE"
-    echo "!!! WARNING: File not found, skipping: $FILE_PATH !!!"
+    echo "!!! WARNING: Primary file not found, skipping: $FILE_PATH !!!" >> "$OUTPUT_FILE"
+    echo "!!! WARNING: Primary file not found, skipping: $FILE_PATH !!!"
   fi
 done
 
 echo ""
-echo "Processing core context/utility files (AuthContext, apiClient)..."
+echo "Processing optional related files (if they exist)..."
+for FILE_PATH in "${OPTIONAL_FILES[@]}"; do
+  if [ -f "$FILE_PATH" ]; then
+    echo "--- START OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+    cat "$FILE_PATH" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    echo "--- END OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    echo "--------------------------------------------------------------" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
+    echo "Added (Optional): $FILE_PATH"
+  else
+    echo "Optional file not found, skipping: $FILE_PATH"
+  fi
+done
+
+echo ""
+echo "Processing core context/utility/routing files..."
 for FILE_PATH in "${ALWAYS_INCLUDE[@]}"; do
   if [ -f "$FILE_PATH" ]; then
     echo "--- START OF CORE FILE: $FILE_PATH ---" >> "$OUTPUT_FILE"
