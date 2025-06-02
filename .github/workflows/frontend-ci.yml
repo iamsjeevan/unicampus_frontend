@@ -36,6 +36,9 @@ jobs:
         run: |
           npm install -g @lhci/cli
           lhci autorun || echo "Lighthouse CI failed"
+      - name: ✅ Lint code
+        run: npx eslint . --ext .js,.jsx
+
 
       - name: Expo Doctor Check (optional)
         run: npx expo-doctor
