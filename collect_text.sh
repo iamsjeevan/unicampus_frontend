@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Output file where all content will be concatenated
-OUTPUT_FILE="frontend_code_for_api_integration.txt"
+OUTPUT_FILE="frontend_resources_integration.txt"
 
 # Ensure the script is run from the project root (basic check)
 if [ ! -f "package.json" ] || [ ! -d "src" ]; then
@@ -11,27 +11,33 @@ if [ ! -f "package.json" ] || [ ! -d "src" ]; then
 fi
 
 # List of files to concatenate
-# Main required files:
+# Primary file needed for this integration:
 FILES_TO_COLLECT=(
-  "src/contexts/AuthContext.tsx"
-  "src/components/auth/LoginScreen.tsx"
-  "src/components/dashboard/Dashboard.tsx" # Representative data-fetching component
-  "src/main.tsx"
+  "src/components/resources/ResourcesScreen.tsx"
 )
 
-# Optional but helpful file for POST/PUT example (if it exists and has API logic):
-OPTIONAL_FILES=(
-   "src/components/communities/CreatePostScreen.tsx"
-   # Add other optional files here if relevant, e.g., for resource upload
-   # "src/components/resources/ResourcesScreen.tsx"
+# Also include AuthContext and apiClient again, as they are fundamental
+# and any recent changes to them would be relevant.
+ALWAYS_INCLUDE=(
+  "src/contexts/AuthContext.tsx"
+  "src/lib/apiClient.ts"
 )
+
+# Optional: If you have any UI components specific to displaying a resource item
+# or for filtering, include them here. For now, we'll assume basic rendering.
+# Example:
+# OPTIONAL_FILES=(
+#   "src/components/resources/ResourceListItem.tsx"
+#   "src/components/resources/ResourceFilters.tsx"
+# )
+
 
 # Clear the output file or create it with a header
-echo "Frontend files for API integration - Collected on $(date)" > "$OUTPUT_FILE"
-echo "==============================================================" >> "$OUTPUT_FILE"
+echo "Frontend files for Resources API integration - Collected on $(date)" > "$OUTPUT_FILE"
+echo "=====================================================================" >> "$OUTPUT_FILE"
 echo "" >> "$OUTPUT_FILE"
 
-echo "Processing required files..."
+echo "Processing primary file for Resources integration..."
 for FILE_PATH in "${FILES_TO_COLLECT[@]}"; do
   if [ -f "$FILE_PATH" ]; then
     echo "--- START OF FILE: $FILE_PATH ---" >> "$OUTPUT_FILE"
@@ -49,22 +55,42 @@ for FILE_PATH in "${FILES_TO_COLLECT[@]}"; do
 done
 
 echo ""
-echo "Processing optional files (if they exist)..."
-for FILE_PATH in "${OPTIONAL_FILES[@]}"; do
+echo "Processing core context/utility files (AuthContext, apiClient)..."
+for FILE_PATH in "${ALWAYS_INCLUDE[@]}"; do
   if [ -f "$FILE_PATH" ]; then
-    echo "--- START OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+    echo "--- START OF CORE FILE: $FILE_PATH ---" >> "$OUTPUT_FILE"
     cat "$FILE_PATH" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
-    echo "--- END OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+    echo "--- END OF CORE FILE: $FILE_PATH ---" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
     echo "--------------------------------------------------------------" >> "$OUTPUT_FILE"
     echo "" >> "$OUTPUT_FILE"
-    echo "Added (Optional): $FILE_PATH"
+    echo "Added (Core): $FILE_PATH"
   else
-    # Don't warn loudly for optional files, just note if not found
-    echo "Optional file not found, skipping: $FILE_PATH"
+    echo "!!! WARNING: Core file not found, skipping: $FILE_PATH !!!" >> "$OUTPUT_FILE"
+    echo "!!! WARNING: Core file not found, skipping: $FILE_PATH !!!"
   fi
 done
+
+# Uncomment and modify if you have optional files for resources
+# echo ""
+# echo "Processing optional files (if they exist)..."
+# for FILE_PATH in "${OPTIONAL_FILES[@]}"; do
+#   if [ -f "$FILE_PATH" ]; then
+#     echo "--- START OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+#     cat "$FILE_PATH" >> "$OUTPUT_FILE"
+#     echo "" >> "$OUTPUT_FILE"
+#     echo "--- END OF FILE (Optional): $FILE_PATH ---" >> "$OUTPUT_FILE"
+#     echo "" >> "$OUTPUT_FILE"
+#     echo "--------------------------------------------------------------" >> "$OUTPUT_FILE"
+#     echo "" >> "$OUTPUT_FILE"
+#     echo "Added (Optional): $FILE_PATH"
+#   else
+#     # Don't warn loudly for optional files, just note if not found
+#     echo "Optional file not found, skipping: $FILE_PATH"
+#   fi
+# done
+
 
 echo ""
 echo "All requested file contents have been written to: $OUTPUT_FILE"
