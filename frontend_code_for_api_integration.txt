@@ -1,0 +1,546 @@
+Frontend files for API integration - Collected on Mon Jun  2 10:13:14 UTC 2025
+==============================================================
+
+--- START OF FILE: src/contexts/AuthContext.tsx ---
+
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  usn: string;
+  class: string;
+  course: string;
+  avatar?: string;
+  type: 'student' | 'admin';
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string, type: 'student' | 'admin') => Promise<boolean>;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+
+  const login = async (email: string, password: string, type: 'student' | 'admin'): Promise<boolean> => {
+    // Mock authentication
+    if (email && password) {
+      const mockUser: User = {
+        id: '1',
+        name: 'S Jeevan',
+        email: email,
+        usn: 'MS22CSE001',
+        class: 'SEM 06-C',
+        course: 'B.E-CS',
+        type: type
+      };
+      setUser(mockUser);
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      isAuthenticated: !!user
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+--- END OF FILE: src/contexts/AuthContext.tsx ---
+
+--------------------------------------------------------------
+
+--- START OF FILE: src/components/auth/LoginScreen.tsx ---
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from '@/hooks/use-toast';
+
+interface LoginScreenProps {
+  type: 'student' | 'admin';
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ type }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const success = await login(email, password, type);
+      if (success) {
+        toast({
+          title: "Login Successful",
+          description: `Welcome back to UniCampus!`,
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Login Failed",
+          description: "Invalid credentials. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred during login.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-unicampus-red/5 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md animate-fade-in">
+        <CardHeader className="text-center">
+          <div className="mb-4">
+            <div className="w-16 h-16 bg-unicampus-red rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl font-bold">UC</span>
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
+            {type === 'student' ? 'Student Login' : 'Admin Login'}
+          </CardTitle>
+          <p className="text-gray-600 dark:text-gray-400">
+            Access your UniCampus account
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Input
+                type="email"
+                placeholder={type === 'student' ? 'Email or USN' : 'Admin ID'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+                required
+              />
+            </div>
+            <div>
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full"
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-unicampus-red hover:bg-unicampus-red-dark"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+            <div className="text-center">
+              <a href="#" className="text-unicampus-red text-sm hover:underline">
+                Forgot Password?
+              </a>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default LoginScreen;
+
+--- END OF FILE: src/components/auth/LoginScreen.tsx ---
+
+--------------------------------------------------------------
+
+--- START OF FILE: src/components/dashboard/Dashboard.tsx ---
+
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import BottomNavigation from '@/components/layout/BottomNavigation';
+
+const Dashboard = () => {
+  const { user } = useAuth();
+
+  const announcements = [
+    "No messages from proctor"
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm">
+        <div className="px-4 py-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-unicampus-red rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">UC</span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">UniCampus</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Ramaiah Institute of Technology</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-6">
+        {/* Welcome Card */}
+        <Card className="animate-slide-up">
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <span className="text-2xl">👤</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Hi, {user?.name} 😎
+                </h2>
+                <div className="mt-2 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Class</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{user?.class}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Course</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">{user?.course}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Proctor Announcements */}
+        <Card className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <span>📢</span>
+              <span>Proctor Announcements</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-gray-600 dark:text-gray-400 text-center py-4">
+              {announcements[0]}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Fee Status */}
+        <Card className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <CardHeader>
+            <CardTitle>Your Fees Paid</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-4 py-2 text-lg">
+                ✅ Updated data
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="animate-slide-up cursor-pointer hover:shadow-lg transition-shadow" style={{ animationDelay: '0.3s' }}>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl mb-2">📊</div>
+              <h3 className="font-medium text-gray-900 dark:text-white">Results</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">View grades</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="animate-slide-up cursor-pointer hover:shadow-lg transition-shadow" style={{ animationDelay: '0.4s' }}>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl mb-2">📚</div>
+              <h3 className="font-medium text-gray-900 dark:text-white">Resources</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Study materials</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      <BottomNavigation />
+    </div>
+  );
+};
+
+export default Dashboard;
+
+--- END OF FILE: src/components/dashboard/Dashboard.tsx ---
+
+--------------------------------------------------------------
+
+--- START OF FILE: src/main.tsx ---
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+createRoot(document.getElementById("root")!).render(<App />);
+
+--- END OF FILE: src/main.tsx ---
+
+--------------------------------------------------------------
+
+--- START OF FILE (Optional): src/components/communities/CreatePostScreen.tsx ---
+
+import React, { useState } from 'react';
+import { X, Camera } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { communities, userFollowedCommunityIds } from '@/data/communitySampleData';
+
+interface CreatePostScreenProps {
+  isOpen: boolean;
+  onClose: () => void;
+  preselectedCommunityId?: string;
+}
+
+const CreatePostScreen = ({ isOpen, onClose, preselectedCommunityId }: CreatePostScreenProps) => {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [selectedCommunity, setSelectedCommunity] = useState(preselectedCommunityId || '');
+  const [image, setImage] = useState<string | null>(null);
+
+  // Sort communities - followed first, then others
+  const followedCommunities = communities.filter(c => userFollowedCommunityIds.includes(c.id));
+  const otherCommunities = communities.filter(c => !userFollowedCommunityIds.includes(c.id));
+  const sortedCommunities = [...followedCommunities, ...otherCommunities];
+
+  const preselectedCommunity = communities.find(c => c.id === preselectedCommunityId);
+  const isPreselected = !!preselectedCommunityId;
+
+  const handleSubmit = () => {
+    if (!title.trim() || !content.trim() || !selectedCommunity) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const selectedCommunityName = communities.find(c => c.id === selectedCommunity)?.name;
+    alert(`Post submitted to ${selectedCommunityName}!`);
+    
+    // Reset form
+    setTitle('');
+    setContent('');
+    if (!isPreselected) {
+      setSelectedCommunity('');
+    }
+    setImage(null);
+    onClose();
+  };
+
+  const handleImageAttach = () => {
+    // Placeholder for image picker
+    alert('Image picker feature coming soon!');
+  };
+
+  const isFormValid = title.trim() && content.trim() && selectedCommunity;
+
+  // Reset selectedCommunity when preselectedCommunityId changes
+  React.useEffect(() => {
+    if (preselectedCommunityId) {
+      setSelectedCommunity(preselectedCommunityId);
+    }
+  }, [preselectedCommunityId]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+              {isPreselected ? `New Post in ${preselectedCommunity?.name}` : 'Create New Post'}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Community Selector */}
+          {!isPreselected && (
+            <div className="space-y-2">
+              <Label htmlFor="community" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Community *
+              </Label>
+              <Select value={selectedCommunity} onValueChange={setSelectedCommunity}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a community" />
+                </SelectTrigger>
+                <SelectContent>
+                  {followedCommunities.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Following
+                      </div>
+                      {followedCommunities.map((community) => (
+                        <SelectItem key={community.id} value={community.id}>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg">{community.icon}</span>
+                            <span>{community.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                  {otherCommunities.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Other Communities
+                      </div>
+                      {otherCommunities.map((community) => (
+                        <SelectItem key={community.id} value={community.id}>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg">{community.icon}</span>
+                            <span>{community.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Show selected community when preselected */}
+          {isPreselected && preselectedCommunity && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Posting to
+              </Label>
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
+                <span className="text-lg">{preselectedCommunity.icon}</span>
+                <span className="font-medium text-gray-900 dark:text-white">{preselectedCommunity.name}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Title Input */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Title *
+            </Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title..."
+              className="w-full"
+            />
+          </div>
+
+          {/* Content Input */}
+          <div className="space-y-2">
+            <Label htmlFor="content" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Content *
+            </Label>
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What's on your mind?"
+              className="w-full min-h-[120px] resize-none"
+              rows={5}
+            />
+          </div>
+
+          {/* Add Image Button */}
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleImageAttach}
+              className="w-full justify-start text-gray-600 dark:text-gray-400 border-dashed"
+            >
+              <Camera className="h-4 w-4 mr-2" />
+              Attach Image (Optional)
+            </Button>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!isFormValid}
+              className="px-6 bg-unicampus-red hover:bg-unicampus-red-dark text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Post
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default CreatePostScreen;
+
+--- END OF FILE (Optional): src/components/communities/CreatePostScreen.tsx ---
+
+--------------------------------------------------------------
+
