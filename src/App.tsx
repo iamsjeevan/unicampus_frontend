@@ -1,5 +1,5 @@
 // src/App.tsx
-import React from 'react'; // Ensure React is imported if using React.ReactNode etc.
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,7 +17,8 @@ import CommunityDetailScreen from "@/components/communities/CommunityDetailScree
 import AttendanceScreen from "@/components/attendance/AttendanceScreen";
 import ResourcesScreen from "@/components/resources/ResourcesScreen";
 import SettingsScreen from "@/components/settings/SettingsScreen";
-import CreateResourceScreen from "@/components/resources/CreateResourceScreen"; // Import the new screen
+import CreateResourceScreen from "@/components/resources/CreateResourceScreen";
+import PostDetailScreen from '@/components/posts/PostDetailScreen'; // <--- IMPORT THE NEW SCREEN
 
 const queryClient = new QueryClient();
 
@@ -25,11 +26,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    // You can render a global loading spinner/page here
     return <div className="flex items-center justify-center min-h-screen">Loading Session...</div>;
   }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />; // Redirect to Index (StartingScreen)
+  return isAuthenticated ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 const AppRoutes = () => {
@@ -37,7 +36,6 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login/student" element={<LoginScreen />} />
-      {/* <Route path="/login/admin" element={<LoginScreen type="admin" />} />  // Assuming one LoginScreen for now */}
       <Route path="/register" element={<div className="min-h-screen flex items-center justify-center">Registration coming soon!</div>} />
 
       {/* Protected Routes */}
@@ -45,9 +43,21 @@ const AppRoutes = () => {
       <Route path="/results" element={<ProtectedRoute><ResultsScreen /></ProtectedRoute>} />
       <Route path="/communities" element={<ProtectedRoute><CommunitiesScreen /></ProtectedRoute>} />
       <Route path="/communities/:communityId" element={<ProtectedRoute><CommunityDetailScreen /></ProtectedRoute>} />
+      
+      {/* --- ADD OR CONFIRM THIS ROUTE FOR POST DETAIL --- */}
+      <Route 
+        path="/posts/:postId" 
+        element={
+          <ProtectedRoute> {/* Or make it public if posts can be viewed without login */}
+            <PostDetailScreen />
+          </ProtectedRoute>
+        } 
+      />
+      {/* ------------------------------------------------- */}
+
       <Route path="/attendance" element={<ProtectedRoute><AttendanceScreen /></ProtectedRoute>} />
       <Route path="/resources" element={<ProtectedRoute><ResourcesScreen /></ProtectedRoute>} />
-      <Route path="/resources/new" element={<ProtectedRoute><CreateResourceScreen /></ProtectedRoute>} /> {/* Route for creating resource */}
+      <Route path="/resources/new" element={<ProtectedRoute><CreateResourceScreen /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
 
       <Route path="*" element={<NotFound />} />
