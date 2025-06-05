@@ -8,18 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BottomNavigation from '@/components/layout/BottomNavigation';
 import PostListItem from './PostListItem';
 import CreatePostScreen from './CreatePostScreen';
-import { ChevronLeft, Users, MessageSquare, Loader2, Edit3 } from 'lucide-react';
+import { ChevronLeft, Users, MessageSquare, Loader2, Edit3, Edit as EditIcon } from 'lucide-react'; // <<<--- ADDED EditIcon
 import { useAuth } from '@/contexts/AuthContext';
 import apiClient, { PaginatedResponse } from '@/lib/apiClient';
 import { toast } from '@/hooks/use-toast';
-import { CommunityDetail, Post, CommunityDetailApiResponse, JoinLeaveApiResponse, VoteApiResponse, Author as PostAuthor } from '@/types/community'; // Ensure correct import
+import { CommunityDetail, Post, CommunityDetailApiResponse, JoinLeaveApiResponse, VoteApiResponse, Author as PostAuthor } from '@/types/community';
 
 // Helper to normalize community data from API (handles snake_case and defaults)
 const normalizeCommunityData = (apiCommunity: any): CommunityDetail => {
     const id = apiCommunity.id || apiCommunity._id;
     if (!id) {
         console.error("Normalization Error: Community data missing ID", apiCommunity);
-        // Throw an error or return a structure indicating failure to normalize
         throw new Error("Community data from API is missing a valid ID.");
     }
     return {
@@ -37,6 +36,8 @@ const normalizeCommunityData = (apiCommunity: any): CommunityDetail => {
         rules: apiCommunity.rules || [],
         createdAt: apiCommunity.created_at || apiCommunity.createdAt,
         updatedAt: apiCommunity.updated_at || apiCommunity.updatedAt,
+        // --- Ensure createdBy or similar field is normalized if it exists from API ---
+        // Example: createdBy: apiCommunity.created_by || apiCommunity.createdBy, // This field is needed for ownership
     };
 };
 
@@ -55,7 +56,7 @@ const normalizePostData = (apiPost: any): Post => {
         linkUrl: apiPost.link_url,
         tags: apiPost.tags || [],
         author: apiPost.author || { id: 'unknown', name: 'Unknown Author' },
-        communityId: apiPost.communityId || apiPost.community?.id, // Ensure communityId is present
+        communityId: apiPost.communityId || apiPost.community?.id,
         community: apiPost.community,
         createdAt: apiPost.created_at || apiPost.createdAt || new Date().toISOString(),
         updatedAt: apiPost.updated_at || apiPost.updatedAt,
@@ -70,7 +71,7 @@ const normalizePostData = (apiPost: any): Post => {
 const CommunityDetailScreen = () => {
   const { communityId: communityIdOrSlug } = useParams<{ communityId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authIsLoading } = useAuth();
+  const { isAuthenticated, isLoading: authIsLoading, user } = useAuth(); // <<<--- ADDED user
 
   const [community, setCommunity] = useState<CommunityDetail | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -83,7 +84,34 @@ const CommunityDetailScreen = () => {
   const [totalPostsPages, setTotalPostsPages] = useState(1);
   const [sortBy, setSortBy] = useState<'new' | 'hot' | 'top'>('new');
 
+  // --- Ownership Check Logic ---
+  // const isOwnerRealCheck = isAuthenticated && user && community && community.createdBy && user.id === community.createdBy;
+  // For UI testing:
+  const isOwner = true; // TEMPORARY: Set to true to always show the button for UI testing
+                        // Replace with 'isOwnerRealCheck' when backend is ready
+                        // Make sure your `CommunityDetail` type has `createdBy` (or similar) and it's populated.
+                        // Also ensure `user.id` from `useAuth` is the correct field for comparison.
+  // -----------------------------
+
+  // --- Handler for Edit Community Button ---
+  const handleEditCommunity = () => {
+    if (!community) return;
+    // When real auth is back, re-check ownership if needed, though button visibility handles it.
+    // if (!isOwner) {
+    //   toast({ title: "Permission Denied", description: "You cannot edit this community.", variant: "destructive"});
+    //   return;
+    // }
+    toast({
+        title: "Edit Community (Mock)",
+        description: `Update action triggered for "${community.name}". Navigation or modal to edit form would go here.`
+    });
+    // Example: navigate(`/communities/${community.id}/edit`);
+  };
+  // ---------------------------------------
+
+
   const fetchCommunityDetails = useCallback(async () => {
+    // ... (keep existing fetchCommunityDetails logic)
     if (!communityIdOrSlug) {
         toast({ title: "Navigation Error", description: "Community identifier is missing.", variant: "destructive" });
         navigate('/communities', { replace: true });
@@ -91,12 +119,8 @@ const CommunityDetailScreen = () => {
     }
     setIsLoadingCommunity(true);
     try {
-      const response = await apiClient<{ status: string; data: { community: any } }>(`/communities/${communityIdOrSlug}`); // Use 'any' for raw fetch
-      
-      // console.log("RAW Community Detail API Response:", JSON.stringify(response, null, 2));
-
+      const response = await apiClient<{ status: string; data: { community: any } }>(`/communities/${communityIdOrSlug}`);
       const rawCommunityData = response.data?.community;
-
       if (response.status === 'success' && rawCommunityData) {
         const normalizedCommunity = normalizeCommunityData(rawCommunityData);
         setCommunity(normalizedCommunity);
@@ -115,6 +139,7 @@ const CommunityDetailScreen = () => {
   }, [communityIdOrSlug, navigate]);
 
   const fetchPosts = useCallback(async (page = 1, existingCommunityId?: string, currentSortBy = sortBy) => {
+    // ... (keep existing fetchPosts logic)
     const actualCommunityId = existingCommunityId || community?.id;
     if (!actualCommunityId) {
         setIsLoadingPosts(false);
@@ -128,7 +153,7 @@ const CommunityDetailScreen = () => {
     params.append('sortBy', currentSortBy);
 
     try {
-      const response = await apiClient<PaginatedResponse<any>>(`/communities/${actualCommunityId}/posts?${params.toString()}`); // Use 'any' for raw fetch
+      const response = await apiClient<PaginatedResponse<any>>(`/communities/${actualCommunityId}/posts?${params.toString()}`);
       if (response.status === 'success' && Array.isArray(response.data)) {
         const normalizedPosts = response.data.map(normalizePostData);
         setPosts(prev => page === 1 ? normalizedPosts : [...prev, ...normalizedPosts]);
@@ -143,7 +168,8 @@ const CommunityDetailScreen = () => {
       if (page === 1) setPosts([]);
       toast({ title: "Error Fetching Posts", description: error.message || "Failed to fetch posts.", variant: "destructive" });
     } finally {
-      if (page === 1) setIsLoadingPosts(false);
+      if (page === 1) setIsLoadingPosts(false); // ensure this is also set for subsequent pages if desired
+      else setIsLoadingPosts(false); // if you want loading indicator for "load more"
     }
   }, [community?.id, sortBy]);
 
@@ -158,6 +184,7 @@ const CommunityDetailScreen = () => {
   }, [community?.id, sortBy, fetchPosts]);
 
   const handleJoinLeave = async () => {
+    // ... (keep existing handleJoinLeave logic)
     if (!community || !community.id) {
       toast({ title: "Error", description: "Community data not loaded. Please try again.", variant: "destructive" });
       return;
@@ -177,13 +204,12 @@ const CommunityDetailScreen = () => {
     setCommunity(prev => prev ? ({ ...prev, is_member: !prev.is_member, memberCount: prev.is_member ? (prev.memberCount ?? 1) - 1 : (prev.memberCount ?? 0) + 1 }) : null);
 
     try {
-      const response = await apiClient<{ status: string; message?: string; data?: { community: any } }>(actionEndpoint, { method: 'POST' }); // Use 'any' for raw fetch
+      const response = await apiClient<{ status: string; message?: string; data?: { community: any } }>(actionEndpoint, { method: 'POST' });
       if (response.status === 'success') {
         toast({ title: "Success", description: response.message || `Successfully ${originalIsMember ? 'left' : 'joined'}!` });
         if (response.data?.community) {
             setCommunity(normalizeCommunityData(response.data.community));
         } else {
-            // If API doesn't return full community object on join/leave, just refetch for consistency
             fetchCommunityDetails();
         }
       } else {
@@ -200,17 +226,16 @@ const CommunityDetailScreen = () => {
   const handleCreatePostModalOpen = () => setIsCreatePostOpen(true);
   const handleCreatePostModalClose = () => setIsCreatePostOpen(false);
 
-  const handlePostCreated = (newPostData?: any) => { // newPostData can be the raw API response
+  const handlePostCreated = (newPostData?: any) => {
+    // ... (keep existing handlePostCreated logic)
     setIsCreatePostOpen(false);
     toast({title: "Post Created!", description: "Your post has been submitted."});
     if(community?.id) {
-        // If newPostData is the actual post object, normalize and prepend
         if (newPostData && (newPostData.id || newPostData._id)) {
             const normalizedNewPost = normalizePostData(newPostData);
             setPosts(prev => [normalizedNewPost, ...prev]);
             setCommunity(prev => prev ? ({...prev, postCount: (prev.postCount || 0) + 1}) : null);
         } else {
-            // Otherwise, just re-fetch
             setSortBy('new');
             fetchPosts(1, community.id, 'new');
             if (community) setCommunity(prev => prev ? ({...prev, postCount: (prev.postCount || 0) + 1}) : null);
@@ -219,6 +244,7 @@ const CommunityDetailScreen = () => {
   };
 
   const handlePostVoteChange = (postId: string, newVoteData: VoteApiResponse['data']) => {
+    // ... (keep existing handlePostVoteChange logic)
     setPosts(prevPosts => prevPosts.map(p =>
       p.id === postId ? { ...p, upvotes: newVoteData.upvotes, downvotes: newVoteData.downvotes, userVote: newVoteData.user_vote } : p
     ));
@@ -247,7 +273,7 @@ const CommunityDetailScreen = () => {
         <Card className="mx-0 rounded-none border-x-0 border-t-0 dark:border-gray-800">
           <CardContent className="p-0">
             {community.bannerImage && (
-              <div className="h-32 sm:h-48 w-full overflow-hidden"> <img src={community.bannerImage} alt={community.name} className="w-full h-full object-cover" /> </div>
+              <div className="h-32 sm:h-48 w-full overflow-hidden"> <img src={community.bannerImage} alt={`${community.name} banner`} className="w-full h-full object-cover" /> </div>
             )}
             <div className="p-4">
               <div className="flex flex-col sm:flex-row items-start sm:space-x-4">
@@ -260,15 +286,31 @@ const CommunityDetailScreen = () => {
                     <span className="flex items-center"><MessageSquare className="h-4 w-4 mr-1" /> {(community.postCount ?? 0).toLocaleString()} posts</span>
                   </div>
                 </div>
-                {isAuthenticated && (
-                    <Button
-                    variant={community.is_member ? "default" : "outline"}
-                    size="sm"
-                    onClick={handleJoinLeave}
-                    disabled={isProcessingJoinLeave}
-                    className={`mt-2 sm:mt-0 ${community.is_member ? "bg-unicampus-red text-white hover:bg-unicampus-red-dark" : "border-unicampus-red text-unicampus-red hover:bg-unicampus-red hover:text-white dark:border-unicampus-red dark:text-unicampus-red dark:hover:bg-unicampus-red dark:hover:text-white"}`}
-                    > {isProcessingJoinLeave ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (community.is_member ? 'Joined' : 'Join Community')} </Button>
-                )}
+                <div className="flex items-center space-x-2 mt-2 sm:mt-0 flex-shrink-0"> {/* Container for Join/Leave and Edit buttons */}
+                    {isAuthenticated && (
+                        <Button
+                        variant={community.is_member ? "default" : "outline"}
+                        size="sm"
+                        onClick={handleJoinLeave}
+                        disabled={isProcessingJoinLeave}
+                        className={` ${community.is_member ? "bg-unicampus-red text-white hover:bg-unicampus-red-dark" : "border-unicampus-red text-unicampus-red hover:bg-unicampus-red hover:text-white dark:border-unicampus-red dark:text-unicampus-red dark:hover:bg-unicampus-red dark:hover:text-white"}`}
+                        > {isProcessingJoinLeave ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (community.is_member ? 'Joined' : 'Join Community')} </Button>
+                    )}
+                    {/* --- NEW EDIT COMMUNITY BUTTON --- */}
+                    {isOwner && (
+                        <Button
+                            variant="outline"
+                            size="sm" // Match the size of Join/Leave button for consistency
+                            onClick={handleEditCommunity}
+                            className="dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" // Example dark mode styling
+                            title="Update Community Details"
+                        >
+                            <EditIcon className="mr-1.5 h-4 w-4" />
+                            Update
+                        </Button>
+                    )}
+                    {/* --- END NEW EDIT COMMUNITY BUTTON --- */}
+                </div>
               </div>
               {community.tags && community.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5"> {community.tags.map(tag => (<Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>))} </div>
@@ -283,6 +325,7 @@ const CommunityDetailScreen = () => {
           </CardContent>
         </Card>
 
+        {/* ... (rest of your posts section) ... */}
         <div className="p-4 space-y-3">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Posts</h3>
