@@ -1,22 +1,20 @@
-// src/screens/SettingsScreen.tsx  (Note the .tsx extension)
+// src/components/settings/SettingsScreen.tsx
 
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext'; // Adjust path if needed
-import { useTheme } from '@/contexts/ThemeContext'; // Adjust path if needed
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 import BottomNavigation from '@/components/layout/BottomNavigation';
-import { toast } from 'react-hot-toast'; // Import the toast library
+import { toast } from "sonner"; // <--- IMPORT SONNER'S TOAST FUNCTION
 
 const SettingsScreen = () => {
-  // Destructure the functions you need from your excellent AuthContext
   const { logout, fetchUserProfile } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   
-  // State to manage the loading status of the update button specifically
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
   const settingsItems = [
@@ -28,46 +26,50 @@ const SettingsScreen = () => {
   ];
 
   const handleLogout = async () => {
-    await logout(); // Your logout is async, so it's good practice to await it
+    await logout();
     navigate('/');
   };
 
-  // This is the main logic for your new button
   const handleUpdateData = async () => {
-    if (isUpdating) return; // Prevent multiple clicks
+    if (isUpdating) return;
 
     setIsUpdating(true);
+    // Use Sonner to show notifications
     const toastId = toast.loading('Updating data...');
 
     try {
-      // Call the function from your context. It handles the API call and state update!
       await fetchUserProfile();
 
-      toast.success('Data updated successfully!', { id: toastId });
+      // Update the toast to a success message
+      toast.success('Data updated successfully!', { 
+        id: toastId,
+        duration: 2000, // Show for 2 seconds
+      });
 
-      // Navigate to the home page after a short delay to let the user see the success message
       setTimeout(() => {
         navigate('/', { replace: true });
-      }, 500);
+      }, 500); // Navigate after a short delay
 
     } catch (error: any) {
       console.error("Failed to update data from settings:", error);
-      // Your context already handles logout on 401, but we can show an error for other cases
-      toast.error(error.message || 'Update failed. Please try again.', { id: toastId });
+      // Update the toast to an error message
+      toast.error(error.message || 'Update failed. Please try again.', { 
+        id: toastId,
+        duration: 3000, // Show for 3 seconds
+      });
     } finally {
-      setIsUpdating(false); // Re-enable the button
+      setIsUpdating(false);
     }
   };
   
-  // A general handler to route clicks from the settings list
   const handleSettingClick = (id: string) => {
     switch (id) {
       case 'update-data':
         handleUpdateData();
         break;
-      // Add other cases for your settings items here
       default:
-        toast(`${settingsItems.find(item => item.id === id)?.title} coming soon!`);
+        const item = settingsItems.find(item => item.id === id);
+        toast(`${item?.title || 'This feature'} is coming soon!`);
     }
   };
 
@@ -83,7 +85,7 @@ const SettingsScreen = () => {
           return (
             <Card
               key={item.id}
-              onClick={() => !isUpdating && handleSettingClick(item.id)} // Prevent clicks while updating
+              onClick={() => !isUpdating && handleSettingClick(item.id)}
               className={`animate-slide-up hover:shadow-lg transition-all ${
                 isUpdateBtn && isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
               }`}
